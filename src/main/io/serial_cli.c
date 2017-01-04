@@ -651,6 +651,7 @@ const clivalue_t valueTable[] = {
     { "nav_rth_tail_first",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &navConfig()->general.flags.rth_tail_first, .config.lookup = { TABLE_OFF_ON } },
     { "nav_rth_alt_mode",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &navConfig()->general.flags.rth_alt_control_mode, .config.lookup = { TABLE_NAV_RTH_ALT_MODE } },
     { "nav_rth_altitude",           VAR_UINT16 | MASTER_VALUE, &navConfig()->general.rth_altitude, .config.minmax = { 100,  65000 } },
+    { "nav_rth_abort_threshold",    VAR_UINT16 | MASTER_VALUE, &navConfig()->general.rth_abort_threshold, .config.minmax = { 100,  65000 } },
 
     { "nav_mc_bank_angle",          VAR_UINT8  | MASTER_VALUE, &navConfig()->mc.max_bank_angle, .config.minmax = { 15,  45 } },
     { "nav_mc_hover_thr",           VAR_UINT16 | MASTER_VALUE, &navConfig()->mc.hover_throttle, .config.minmax = { 1000,  2000 } },

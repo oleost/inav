@@ -86,6 +86,9 @@ static void calcualteAndSetActiveWaypointToLocalPosition(const t_fp_vector * pos
 void calculateInitialHoldPosition(t_fp_vector * pos);
 void calculateFarAwayTarget(t_fp_vector * farAwayPos, int32_t yaw, int32_t distance);
 
+void initializeRTHSanityChecker(const t_fp_vector * pos);
+bool validateRTHSanityChecker(void);
+
 /*************************************************************************************************/
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_IDLE(navigationFSMState_t previousState);
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_ALTHOLD_INITIALIZE(navigationFSMState_t previousState);
@@ -97,13 +100,11 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_POSHOLD_3D_IN_PROGRESS(
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_INITIALIZE(navigationFSMState_t previousState);
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_2D_INITIALIZE(navigationFSMState_t previousState);
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_2D_HEAD_HOME(navigationFSMState_t previousState);
-static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_2D_GPS_FAILING(navigationFSMState_t previousState);
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_2D_FINISHING(navigationFSMState_t previousState);
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_2D_FINISHED(navigationFSMState_t previousState);
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_INITIALIZE(navigationFSMState_t previousState);
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_CLIMB_TO_SAFE_ALT(navigationFSMState_t previousState);
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_HEAD_HOME(navigationFSMState_t previousState);
-static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_GPS_FAILING(navigationFSMState_t previousState);
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_HOVER_PRIOR_TO_LANDING(navigationFSMState_t previousState);
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_LANDING(navigationFSMState_t previousState);
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_FINISHING(navigationFSMState_t previousState);
@@ -284,26 +285,10 @@ static const navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
         .onEvent = {
             [NAV_FSM_EVENT_TIMEOUT]                     = NAV_STATE_RTH_2D_HEAD_HOME,    // re-process the state
             [NAV_FSM_EVENT_SUCCESS]                     = NAV_STATE_RTH_2D_FINISHING,
-            [NAV_FSM_EVENT_ERROR]                       = NAV_STATE_RTH_2D_GPS_FAILING,
             [NAV_FSM_EVENT_SWITCH_TO_IDLE]              = NAV_STATE_IDLE,
             [NAV_FSM_EVENT_SWITCH_TO_ALTHOLD]           = NAV_STATE_ALTHOLD_INITIALIZE,
             [NAV_FSM_EVENT_SWITCH_TO_POSHOLD_2D]        = NAV_STATE_POSHOLD_2D_INITIALIZE,
             [NAV_FSM_EVENT_SWITCH_TO_POSHOLD_3D]        = NAV_STATE_POSHOLD_3D_INITIALIZE,
-        }
-    },
-
-    [NAV_STATE_RTH_2D_GPS_FAILING] = {
-        .onEntry = navOnEnteringState_NAV_STATE_RTH_2D_GPS_FAILING,
-        .timeoutMs = 10,
-        .stateFlags = NAV_CTL_POS | NAV_CTL_YAW | NAV_REQUIRE_ANGLE | NAV_REQUIRE_MAGHOLD | NAV_AUTO_RTH | NAV_RC_POS | NAV_RC_YAW,
-        .mapToFlightModes = NAV_RTH_MODE,
-        .mwState = MW_NAV_STATE_RTH_ENROUTE,
-        .mwError = MW_NAV_ERROR_SPOILED_GPS,
-        .onEvent = {
-            [NAV_FSM_EVENT_TIMEOUT]                     = NAV_STATE_RTH_2D_GPS_FAILING,    // re-process the state
-            [NAV_FSM_EVENT_SUCCESS]                     = NAV_STATE_RTH_2D_HEAD_HOME,
-            [NAV_FSM_EVENT_SWITCH_TO_IDLE]              = NAV_STATE_IDLE,
-            [NAV_FSM_EVENT_SWITCH_TO_ALTHOLD]           = NAV_STATE_ALTHOLD_INITIALIZE,
             [NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING] = NAV_STATE_EMERGENCY_LANDING_INITIALIZE,
         }
     },
@@ -364,7 +349,6 @@ static const navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
         .onEvent = {
             [NAV_FSM_EVENT_TIMEOUT]                     = NAV_STATE_RTH_3D_CLIMB_TO_SAFE_ALT,   // re-process the state
             [NAV_FSM_EVENT_SUCCESS]                     = NAV_STATE_RTH_3D_HEAD_HOME,
-            [NAV_FSM_EVENT_ERROR]                       = NAV_STATE_RTH_3D_GPS_FAILING,
             [NAV_FSM_EVENT_SWITCH_TO_IDLE]              = NAV_STATE_IDLE,
             [NAV_FSM_EVENT_SWITCH_TO_ALTHOLD]           = NAV_STATE_ALTHOLD_INITIALIZE,
             [NAV_FSM_EVENT_SWITCH_TO_POSHOLD_2D]        = NAV_STATE_POSHOLD_2D_INITIALIZE,
@@ -382,25 +366,10 @@ static const navigationFSMStateDescriptor_t navFSM[NAV_STATE_COUNT] = {
         .onEvent = {
             [NAV_FSM_EVENT_TIMEOUT]                     = NAV_STATE_RTH_3D_HEAD_HOME,           // re-process the state
             [NAV_FSM_EVENT_SUCCESS]                     = NAV_STATE_RTH_3D_HOVER_PRIOR_TO_LANDING,
-            [NAV_FSM_EVENT_ERROR]                       = NAV_STATE_RTH_3D_GPS_FAILING,
             [NAV_FSM_EVENT_SWITCH_TO_IDLE]              = NAV_STATE_IDLE,
             [NAV_FSM_EVENT_SWITCH_TO_ALTHOLD]           = NAV_STATE_ALTHOLD_INITIALIZE,
             [NAV_FSM_EVENT_SWITCH_TO_POSHOLD_2D]        = NAV_STATE_POSHOLD_2D_INITIALIZE,
             [NAV_FSM_EVENT_SWITCH_TO_POSHOLD_3D]        = NAV_STATE_POSHOLD_3D_INITIALIZE,
-        }
-    },
-
-    [NAV_STATE_RTH_3D_GPS_FAILING] = {
-        .onEntry = navOnEnteringState_NAV_STATE_RTH_3D_GPS_FAILING,
-        .timeoutMs = 10,
-        .stateFlags = NAV_CTL_ALT | NAV_CTL_POS | NAV_CTL_YAW | NAV_REQUIRE_ANGLE | NAV_REQUIRE_MAGHOLD | NAV_REQUIRE_THRTILT | NAV_AUTO_RTH | NAV_RC_POS | NAV_RC_YAW,
-        .mapToFlightModes = NAV_RTH_MODE,
-        .mwState = MW_NAV_STATE_RTH_ENROUTE,
-        .mwError = MW_NAV_ERROR_SPOILED_GPS,
-        .onEvent = {
-            [NAV_FSM_EVENT_TIMEOUT]                     = NAV_STATE_RTH_3D_GPS_FAILING,    // re-process the state
-            [NAV_FSM_EVENT_SUCCESS]                     = NAV_STATE_RTH_3D_HEAD_HOME,
-            [NAV_FSM_EVENT_SWITCH_TO_IDLE]              = NAV_STATE_IDLE,
             [NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING] = NAV_STATE_EMERGENCY_LANDING_INITIALIZE,
         }
     },
@@ -878,6 +847,9 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_2D_INITIALIZE(navig
                 setHomePosition(&posControl.actualState.pos, posControl.actualState.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_HEADING);
             }
 
+            // Initialize RTH sanity check to prevent fly-aways on RTH
+            initializeRTHSanityChecker(&posControl.actualState.pos);
+
             return NAV_FSM_EVENT_SUCCESS;
         }
         /* Position sensor failure timeout - land */
@@ -895,38 +867,32 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_2D_HEAD_HOME(naviga
 {
     UNUSED(previousState);
 
-    // If no position sensor available - switch to NAV_STATE_RTH_2D_GPS_FAILING
-    if (!(posControl.flags.hasValidPositionSensor && posControl.flags.hasValidHeadingSensor)) {
-        return NAV_FSM_EVENT_ERROR;         // NAV_STATE_RTH_2D_GPS_FAILING
+    if (!posControl.flags.hasValidHeadingSensor) {
+        return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
     }
-
-    if (isWaypointReached(&posControl.homeWaypointAbove)) {
-        // Successfully reached position target
-        return NAV_FSM_EVENT_SUCCESS;       // NAV_STATE_RTH_2D_FINISHING
-    }
-    else {
-        // Update XY-position target
-        if (posControl.navConfig->general.flags.rth_tail_first && !STATE(FIXED_WING)) {
-            setDesiredPosition(&posControl.homeWaypointAbove.pos, 0, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_BEARING_TAIL_FIRST);
+    else if (posControl.flags.hasValidPositionSensor) {
+        if (isWaypointReached(&posControl.homeWaypointAbove)) {
+            // Successfully reached position target
+            return NAV_FSM_EVENT_SUCCESS;       // NAV_STATE_RTH_2D_FINISHING
+        }
+        else if (!validateRTHSanityChecker()) {
+            // Sanity check of RTH
+            return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
         }
         else {
-            setDesiredPosition(&posControl.homeWaypointAbove.pos, 0, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_BEARING);
+            // Update XY-position target
+            if (posControl.navConfig->general.flags.rth_tail_first && !STATE(FIXED_WING)) {
+                setDesiredPosition(&posControl.homeWaypointAbove.pos, 0, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_BEARING_TAIL_FIRST);
+            }
+            else {
+                setDesiredPosition(&posControl.homeWaypointAbove.pos, 0, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_BEARING);
+            }
+
+            return NAV_FSM_EVENT_NONE;
         }
-
-        return NAV_FSM_EVENT_NONE;
     }
-}
-
-static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_2D_GPS_FAILING(navigationFSMState_t previousState)
-{
-    UNUSED(previousState);
-
-    /* Wait for GPS to be online again */
-    if (posControl.flags.hasValidPositionSensor && posControl.flags.hasValidHeadingSensor && STATE(GPS_FIX_HOME)) {
-        return NAV_FSM_EVENT_SUCCESS;       // NAV_STATE_RTH_2D_HEAD_HOME
-    }
-    /* No HOME set or position sensor failure timeout - land */
-    else if (!STATE(GPS_FIX_HOME) || !posControl.flags.hasValidHeadingSensor || checkForPositionSensorTimeout()) {
+    /* Position sensor failure timeout - land */
+    else if (checkForPositionSensorTimeout()) {
         return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
     }
     /* No valid POS sensor but still within valid timeout - wait */
@@ -974,6 +940,10 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_INITIALIZE(navig
                 } else {
                     // Multicopter, hover and climb
                     calculateInitialHoldPosition(&targetHoldPos);
+
+                    // Initialize RTH sanity check to prevent fly-aways on RTH
+                    // For airplanes this is delayed until climb-out is finished
+                    initializeRTHSanityChecker(&targetHoldPos);
                 }
 
                 setDesiredPosition(&targetHoldPos, posControl.actualState.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_HEADING);
@@ -1002,6 +972,12 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_CLIMB_TO_SAFE_AL
     }
 
     if (((posControl.actualState.pos.V.Z - posControl.homeWaypointAbove.pos.V.Z) > -50.0f) || (!posControl.navConfig->general.flags.rth_climb_first)) {
+        // For airplane we should finish climb first as it can take some distance
+        if (STATE(FIXED_WING)) {
+            // Initialize RTH sanity check to prevent fly-aways on RTH
+            initializeRTHSanityChecker(&posControl.actualState.pos);
+        }
+
         return NAV_FSM_EVENT_SUCCESS;   // NAV_STATE_RTH_3D_HEAD_HOME
     }
     else {
@@ -1021,32 +997,38 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_HEAD_HOME(naviga
 {
     UNUSED(previousState);
 
-    // If no position sensor available - land immediately
-    if (!(posControl.flags.hasValidPositionSensor && posControl.flags.hasValidHeadingSensor)) {
-        return NAV_FSM_EVENT_ERROR;         // NAV_STATE_RTH_3D_GPS_FAILING
+    if (!posControl.flags.hasValidHeadingSensor) {
+        return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
     }
-
-    if (isWaypointReached(&posControl.homeWaypointAbove)) {
-        // Successfully reached position target - update XYZ-position
-        setDesiredPosition(&posControl.homeWaypointAbove.pos, posControl.homeWaypointAbove.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_HEADING);
-        return NAV_FSM_EVENT_SUCCESS;       // NAV_STATE_RTH_3D_HOVER_PRIOR_TO_LANDING
-    }
-    else {
-        // Update XYZ-position target
-        if (posControl.navConfig->general.flags.rth_tail_first && !STATE(FIXED_WING)) {
-            setDesiredPosition(&posControl.homeWaypointAbove.pos, 0, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_BEARING_TAIL_FIRST);
+    else if (posControl.flags.hasValidPositionSensor) {
+        if (isWaypointReached(&posControl.homeWaypointAbove)) {
+            // Successfully reached position target - update XYZ-position
+            setDesiredPosition(&posControl.homeWaypointAbove.pos, posControl.homeWaypointAbove.yaw, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_HEADING);
+            return NAV_FSM_EVENT_SUCCESS;       // NAV_STATE_RTH_3D_HOVER_PRIOR_TO_LANDING
+        }
+        else if (!validateRTHSanityChecker()) {
+            // Sanity check of RTH
+            return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
         }
         else {
-            setDesiredPosition(&posControl.homeWaypointAbove.pos, 0, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_BEARING);
+            // Update XYZ-position target
+            if (posControl.navConfig->general.flags.rth_tail_first && !STATE(FIXED_WING)) {
+                setDesiredPosition(&posControl.homeWaypointAbove.pos, 0, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_BEARING_TAIL_FIRST);
+            }
+            else {
+                setDesiredPosition(&posControl.homeWaypointAbove.pos, 0, NAV_POS_UPDATE_XY | NAV_POS_UPDATE_Z | NAV_POS_UPDATE_BEARING);
+            }
+            return NAV_FSM_EVENT_NONE;
         }
+    }
+    /* Position sensor failure timeout - land */
+    else if (checkForPositionSensorTimeout()) {
+        return NAV_FSM_EVENT_SWITCH_TO_EMERGENCY_LANDING;
+    }
+    /* No valid POS sensor but still within valid timeout - wait */
+    else {
         return NAV_FSM_EVENT_NONE;
     }
-}
-
-static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_GPS_FAILING(navigationFSMState_t previousState)
-{
-    /* Same logic as for 2D GPS RTH */
-    return navOnEnteringState_NAV_STATE_RTH_2D_GPS_FAILING(previousState);
 }
 
 static navigationFSMEvent_t navOnEnteringState_NAV_STATE_RTH_3D_HOVER_PRIOR_TO_LANDING(navigationFSMState_t previousState)
@@ -1164,6 +1146,7 @@ static navigationFSMEvent_t navOnEnteringState_NAV_STATE_WAYPOINT_PRE_ACTION(nav
 
         case NAV_WP_ACTION_RTH:
         default:
+            initializeRTHSanityChecker(&posControl.actualState.pos);
             calcualteAndSetActiveWaypointToLocalPosition(&posControl.homeWaypointAbove.pos);
             return NAV_FSM_EVENT_SUCCESS;       // will switch to NAV_STATE_WAYPOINT_IN_PROGRESS
     };
@@ -1700,6 +1683,41 @@ static void updateDesiredRTHAltitude(void)
     else {
         posControl.homeWaypointAbove.pos.V.Z = posControl.actualState.pos.V.Z;
     }
+}
+
+/*-----------------------------------------------------------
+ * RTH sanity test logic
+ *-----------------------------------------------------------*/
+void initializeRTHSanityChecker(const t_fp_vector * pos)
+{
+    const timeMs_t currentTimeMs = millis();
+
+    posControl.rthSanityChecker.lastCheckTime = currentTimeMs;
+    posControl.rthSanityChecker.initialPosition = *pos;
+    posControl.rthSanityChecker.minimalDistanceToHome = calculateDistanceToDestination(&posControl.homePosition.pos);
+}
+
+bool validateRTHSanityChecker(void)
+{
+    const timeMs_t currentTimeMs = millis();
+    bool checkResult = true;    // Between the checks return the "good" status
+
+    // Check at 10Hz rate
+    if ((currentTimeMs - posControl.rthSanityChecker.lastCheckTime) > 100) {
+        const float currentDistanceToHome = calculateDistanceToDestination(&posControl.homePosition.pos);
+
+        if (currentDistanceToHome < posControl.rthSanityChecker.minimalDistanceToHome) {
+            posControl.rthSanityChecker.minimalDistanceToHome = currentDistanceToHome;
+        }
+        else if ((currentDistanceToHome - posControl.rthSanityChecker.minimalDistanceToHome) > posControl.navConfig->general.rth_abort_threshold) {
+            // If while doing RTH we got even farther away from home - RTH is doing something crazy
+            checkResult = false;
+        }
+
+        posControl.rthSanityChecker.lastCheckTime = currentTimeMs;
+    }
+
+    return checkResult;
 }
 
 /*-----------------------------------------------------------

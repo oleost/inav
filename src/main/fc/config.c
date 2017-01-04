@@ -195,6 +195,7 @@ void resetNavConfig(navConfig_t * navConfig)
     navConfig->general.emerg_descent_rate = 500;    // 5 m/s
     navConfig->general.min_rth_distance = 500;      // If closer than 5m - land immediately
     navConfig->general.rth_altitude = 1000;         // 10m
+    navConfig->general.rth_abort_threshold = 15000; // 150m
 
     // MC-specific
     navConfig->mc.max_bank_angle = 30;      // 30 deg
