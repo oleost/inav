@@ -117,19 +117,19 @@ static void updateAltitudeThrottleController_MC(uint32_t deltaMicros)
 
 bool adjustMulticopterAltitudeFromRCInput(void)
 {
-    int16_t rcThrottleAdjustment = rcCommand[THROTTLE] - altHoldThrottleRCZero;
-    if (ABS(rcThrottleAdjustment) > posControl.rcControlsConfig->alt_hold_deadband) {
+    int16_t rcThrottleAdjustment = applyDeadband(rcCommand[THROTTLE] - altHoldThrottleRCZero, posControl.rcControlsConfig->alt_hold_deadband);
+    if (rcThrottleAdjustment) {
         // set velocity proportional to stick movement
         float rcClimbRate;
 
         // Make sure we can satisfy max_manual_climb_rate in both up and down directions
         if (rcThrottleAdjustment > 0) {
             // Scaling from altHoldThrottleRCZero to maxthrottle
-            rcClimbRate = rcThrottleAdjustment * posControl.navConfig->general.max_manual_climb_rate / (posControl.motorConfig->maxthrottle - altHoldThrottleRCZero);
+            rcClimbRate = rcThrottleAdjustment * posControl.navConfig->general.max_manual_climb_rate / (posControl.motorConfig->maxthrottle - altHoldThrottleRCZero - posControl.rcControlsConfig->alt_hold_deadband);
         }
         else {
             // Scaling from minthrottle to altHoldThrottleRCZero
-            rcClimbRate = rcThrottleAdjustment * posControl.navConfig->general.max_manual_climb_rate / (altHoldThrottleRCZero - posControl.motorConfig->minthrottle);
+            rcClimbRate = rcThrottleAdjustment * posControl.navConfig->general.max_manual_climb_rate / (altHoldThrottleRCZero - posControl.motorConfig->minthrottle - posControl.rcControlsConfig->alt_hold_deadband);
         }
 
         updateAltitudeTargetFromClimbRate(rcClimbRate, CLIMB_RATE_UPDATE_SURFACE_TARGET);
