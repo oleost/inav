@@ -2520,8 +2520,8 @@ void navigationUsePIDs(const pidProfile_t *initialPidProfile)
     // Initialize altitude hold PID-controllers (pos_z, vel_z, acc_z
     navPInit(&posControl.pids.pos[Z], (float)posControl.pidProfile->P8[PIDALT] / 100.0f);
 
-    navPidInit(&posControl.pids.vel[Z], (float)posControl.pidProfile->P8[PIDVEL] / 100.0f,
-                                        (float)posControl.pidProfile->I8[PIDVEL] / 100.0f,
+    navPidInit(&posControl.pids.vel[Z], (float)posControl.pidProfile->P8[PIDVEL] / 66.7f,
+                                        (float)posControl.pidProfile->I8[PIDVEL] / 20.0f,
                                         (float)posControl.pidProfile->D8[PIDVEL] / 100.0f);
 
     // Initialize surface tracking PID
