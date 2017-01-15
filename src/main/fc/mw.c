@@ -46,6 +46,7 @@
 #include "sensors/battery.h"
 
 #include "fc/config.h"
+#include "fc/controlrate_profile.h"
 #include "fc/rc_controls.h"
 #include "fc/rc_curves.h"
 #include "fc/runtime_config.h"
@@ -53,11 +54,8 @@
 
 #include "io/beeper.h"
 #include "io/dashboard.h"
-#include "io/motors.h"
-#include "io/servos.h"
 #include "io/gimbal.h"
 #include "io/gps.h"
-#include "io/motors.h"
 #include "io/serial.h"
 #include "io/statusindicator.h"
 #include "io/asyncfatfs/asyncfatfs.h"
@@ -92,7 +90,7 @@ enum {
 
 #define GYRO_WATCHDOG_DELAY 100  // Watchdog for boards without interrupt for gyro
 
-uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
+timeDelta_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
 
 float dT;
 
@@ -178,9 +176,9 @@ void annexCode(void)
     int32_t throttleValue;
 
     // Compute ROLL PITCH and YAW command
-    rcCommand[ROLL] = getAxisRcCommand(rcData[ROLL], currentControlRateProfile->rcExpo8, masterConfig.rcControlsConfig.deadband);
-    rcCommand[PITCH] = getAxisRcCommand(rcData[PITCH], currentControlRateProfile->rcExpo8, masterConfig.rcControlsConfig.deadband);
-    rcCommand[YAW] = -getAxisRcCommand(rcData[YAW], currentControlRateProfile->rcYawExpo8, masterConfig.rcControlsConfig.yaw_deadband);
+    rcCommand[ROLL] = getAxisRcCommand(rcData[ROLL], currentControlRateProfile->rcExpo8, rcControlsConfig()->deadband);
+    rcCommand[PITCH] = getAxisRcCommand(rcData[PITCH], currentControlRateProfile->rcExpo8, rcControlsConfig()->deadband);
+    rcCommand[YAW] = -getAxisRcCommand(rcData[YAW], currentControlRateProfile->rcYawExpo8, rcControlsConfig()->yaw_deadband);
 
     //Compute THROTTLE command
     throttleValue = constrain(rcData[THROTTLE], rxConfig()->mincheck, PWM_RANGE_MAX);
@@ -530,7 +528,7 @@ void filterRc(bool isRXDataNew)
         filterInitialised = true;
     }
 
-    const uint16_t filteredCycleTime = biquadFilterApply(&filteredCycleTimeState, (float) cycleTime);
+    const timeDelta_t filteredCycleTime = biquadFilterApply(&filteredCycleTimeState, (float) cycleTime);
     rcInterpolationFactor = rxGetRefreshRate() / filteredCycleTime + 1;
 
     if (isRXDataNew) {
@@ -558,14 +556,14 @@ void filterRc(bool isRXDataNew)
 void taskGyro(timeUs_t currentTimeUs) {
     // getTaskDeltaTime() returns delta time freezed at the moment of entering the scheduler. currentTime is freezed at the very same point.
     // To make busy-waiting timeout work we need to account for time spent within busy-waiting loop
-    const timeUs_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
+    const timeDelta_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
 
     if (gyroConfig()->gyroSync) {
         while (true) {
         #ifdef ASYNC_GYRO_PROCESSING
-            if (gyroSyncCheckUpdate(&gyro.dev) || ((currentDeltaTime + (micros() - currentTimeUs)) >= (getGyroUpdateRate() + GYRO_WATCHDOG_DELAY))) {
+            if (gyroSyncCheckUpdate(&gyro.dev) || ((currentDeltaTime + cmpTimeUs(micros(), currentTimeUs)) >= (getGyroUpdateRate() + GYRO_WATCHDOG_DELAY))) {
         #else
-            if (gyroSyncCheckUpdate(&gyro.dev) || ((currentDeltaTime + (micros() - currentTimeUs)) >= (gyro.targetLooptime + GYRO_WATCHDOG_DELAY))) {
+            if (gyroSyncCheckUpdate(&gyro.dev) || ((currentDeltaTime + cmpTimeUs(micros(), currentTimeUs)) >= ((timeDelta_t)gyro.targetLooptime + GYRO_WATCHDOG_DELAY))) {
         #endif
                 break;
             }
@@ -577,7 +575,7 @@ void taskGyro(timeUs_t currentTimeUs) {
 
 #ifdef ASYNC_GYRO_PROCESSING
     /* Update IMU for better accuracy */
-    imuUpdateGyroscope(currentDeltaTime + (micros() - currentTimeUs));
+    imuUpdateGyroscope((timeUs_t)currentDeltaTime + (micros() - currentTimeUs));
 #endif
 }
 
@@ -711,11 +709,11 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
 
 }
 
-bool taskUpdateRxCheck(timeUs_t currentTimeUs, uint32_t currentDeltaTime)
+bool taskUpdateRxCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTime)
 {
     UNUSED(currentDeltaTime);
 
-    return updateRx(currentTimeUs);
+    return rxUpdateCheck(currentTimeUs, currentDeltaTime);
 }
 
 void taskUpdateRxMain(timeUs_t currentTimeUs)

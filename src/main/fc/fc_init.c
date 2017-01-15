@@ -77,8 +77,6 @@
 #include "io/serial.h"
 #include "io/flashfs.h"
 #include "io/gps.h"
-#include "io/motors.h"
-#include "io/servos.h"
 #include "io/gimbal.h"
 #include "io/ledstrip.h"
 #include "io/dashboard.h"
@@ -118,6 +116,9 @@
 #include "config/config_profile.h"
 #include "config/config_master.h"
 #include "config/feature.h"
+#include "config/parameter_group.h"
+#include "config/parameter_group_ids.h"
+
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
 #include "hardware_revision.h"
@@ -176,6 +177,8 @@ void init(void)
     addBootlogEvent2(BOOT_EVENT_CONFIG_LOADED, BOOT_EVENT_FLAGS_NONE);
     systemState |= SYSTEM_STATE_CONFIG_LOADED;
 
+    debugMode = masterConfig.debug_mode;
+
     systemInit();
 
     i2cSetOverclock(masterConfig.i2c_overclock);
@@ -229,13 +232,13 @@ void init(void)
 #endif
 
 #if defined(AVOID_UART2_FOR_PWM_PPM)
-    serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL),
+    serialInit(feature(FEATURE_SOFTSERIAL),
             feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART2 : SERIAL_PORT_NONE);
 #elif defined(AVOID_UART3_FOR_PWM_PPM)
-    serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL),
+    serialInit(feature(FEATURE_SOFTSERIAL),
             feature(FEATURE_RX_PPM) || feature(FEATURE_RX_PARALLEL_PWM) ? SERIAL_PORT_USART3 : SERIAL_PORT_NONE);
 #else
-    serialInit(&masterConfig.serialConfig, feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
+    serialInit(feature(FEATURE_SOFTSERIAL), SERIAL_PORT_NONE);
 #endif
 
 #ifdef USE_SERVOS
@@ -310,7 +313,7 @@ void init(void)
 
     pwm_params.enablePWMOutput = feature(FEATURE_PWM_OUTPUT_ENABLE);
 
-#ifndef SKIP_RX_PWM_PPM
+#if defined(USE_RX_PWM) || defined(USE_RX_PPM)
     pwmRxInit(pwmRxConfig());
 #endif
 
@@ -346,7 +349,8 @@ void init(void)
         .isInverted = false
 #endif
     };
-#ifdef NAZE
+
+#if defined(NAZE) && defined(USE_HARDWARE_REVISION_DETECTION)
     if (hardwareRevision >= NAZE32_REV5) {
         // naze rev4 and below used opendrain to PNP for buzzer. Rev5 and above use PP to NPN.
         beeperConfig.isOD = false;
@@ -387,14 +391,6 @@ void init(void)
     updateHardwareRevision();
 #endif
 
-#if defined(NAZE)
-    if (hardwareRevision == NAZE32_SP) {
-        serialRemovePort(SERIAL_PORT_SOFTSERIAL2);
-    } else  {
-        serialRemovePort(SERIAL_PORT_USART3);
-    }
-#endif
-
 #if defined(SONAR) && defined(USE_SOFTSERIAL1)
 #if defined(FURYF3) || defined(OMNIBUS) || defined(SPRACINGF3MINI)
     if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
@@ -411,13 +407,13 @@ void init(void)
 
 #ifdef USE_I2C
 #if defined(NAZE)
-    if (hardwareRevision != NAZE32_SP) {
-        i2cInit(I2C_DEVICE);
-    } else {
+    #if defined(AIRHERO32)
         if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
             i2cInit(I2C_DEVICE);
         }
-    }
+    #else
+        i2cInit(I2C_DEVICE);
+    #endif
 #elif defined(I2C_DEVICE_SHARES_UART3)
     if (!doesConfigurationUsePort(SERIAL_PORT_USART3)) {
         i2cInit(I2C_DEVICE);
@@ -446,11 +442,6 @@ void init(void)
 #ifdef OLIMEXINO
     adc_params.enableExternal1 = true;
 #endif
-#ifdef NAZE
-    // optional ADC5 input on rev.5 hardware
-    adc_params.enableExternal1 = (hardwareRevision >= NAZE32_REV5);
-#endif
-
     adcInit(&adc_params);
 #endif
 
@@ -493,7 +484,7 @@ void init(void)
 
 #ifdef GPS
     if (feature(FEATURE_GPS)) {
-        gpsPreInit(&masterConfig.gpsConfig);
+        gpsPreInit();
     }
 #endif
 
@@ -521,7 +512,7 @@ void init(void)
 #endif
 
 #ifdef USE_CLI
-    cliInit(&masterConfig.serialConfig);
+    cliInit(serialConfig());
 #endif
 
     failsafeInit(flight3DConfig()->deadband3d_throttle);
@@ -530,24 +521,13 @@ void init(void)
 
 #ifdef GPS
     if (feature(FEATURE_GPS)) {
-        gpsInit(
-            &masterConfig.serialConfig,
-            &masterConfig.gpsConfig
-        );
-
+        gpsInit();
         addBootlogEvent2(BOOT_EVENT_GPS_INIT_DONE, BOOT_EVENT_FLAGS_NONE);
     }
 #endif
 
 #ifdef NAV
-    navigationInit(
-        &masterConfig.navConfig,
-        &currentProfile->pidProfile,
-        &masterConfig.rcControlsConfig,
-        rxConfig(),
-        &masterConfig.flight3DConfig,
-        motorConfig()
-    );
+    navigationInit();
 #endif
 
 #ifdef LED_STRIP
@@ -632,7 +612,9 @@ void init(void)
 #endif
 
 #ifdef USE_PMW_SERVO_DRIVER
-    pwmDriverInitialize();
+    if (feature(FEATURE_PWM_SERVO_DRIVER)) {
+        pwmDriverInitialize();
+    }
 #endif
 
     // Latch active features AGAIN since some may be modified by init().

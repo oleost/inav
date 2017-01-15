@@ -471,7 +471,6 @@ COMMON_SRC = \
             build/assert.c \
             $(TARGET_DIR_SRC) \
             main.c \
-            fc/mw.c \
             common/encoding.c \
             common/filter.c \
             common/maths.c \
@@ -482,8 +481,6 @@ COMMON_SRC = \
             config/config_eeprom.c \
             config/config_streamer.c \
             config/parameter_group.c \
-            fc/config.c \
-            fc/runtime_config.c \
             drivers/logging.c \
             drivers/adc.c \
             drivers/buf_writer.c \
@@ -516,15 +513,18 @@ COMMON_SRC = \
             flight/mixer.c \
             flight/servos.c \
             flight/pid.c \
+            fc/config.c \
+            fc/controlrate_profile.c \
             fc/fc_init.c \
             fc/fc_tasks.c \
             fc/fc_hardfaults.c \
             fc/fc_msp.c \
+            fc/mw.c \
             fc/rc_controls.c \
             fc/rc_curves.c \
+            fc/runtime_config.c \
             fc/serial_cli.c \
             io/beeper.c \
-            io/motors.c \
             io/serial.c \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
@@ -543,6 +543,7 @@ COMMON_SRC = \
             rx/pwm.c \
             rx/rx.c \
             rx/rx_spi.c \
+            rx/crsf.c \
             rx/sbus.c \
             rx/spektrum.c \
             rx/sumd.c \
@@ -595,6 +596,7 @@ HIGHEND_SRC = \
             sensors/barometer.c \
             sensors/pitotmeter.c \
             telemetry/telemetry.c \
+            telemetry/crsf.c \
             telemetry/frsky.c \
             telemetry/hott.c \
             telemetry/smartport.c \

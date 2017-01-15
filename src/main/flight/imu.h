@@ -18,6 +18,7 @@
 #pragma once
 
 #include "common/time.h"
+#include "config/parameter_group.h"
 
 #define GRAVITY_CMSS    980.665f
 
@@ -48,6 +49,8 @@ typedef struct imuConfig_s {
     uint8_t small_angle;
 } imuConfig_t;
 
+PG_DECLARE(imuConfig_t, imuConfig);
+
 typedef struct imuRuntimeConfig_s {
     float dcm_kp_acc;
     float dcm_ki_acc;
@@ -56,8 +59,7 @@ typedef struct imuRuntimeConfig_s {
     uint8_t small_angle;
 } imuRuntimeConfig_t;
 
-struct pidProfile_s;
-void imuConfigure(imuConfig_t *imuConfig, struct pidProfile_s *initialPidProfile);
+void imuConfigure(void);
 
 void imuUpdateAttitude(timeUs_t currentTimeUs);
 void imuUpdateAccelerometer(void);

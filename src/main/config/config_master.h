@@ -39,34 +39,18 @@
 #include "flight/servos.h"
 #include "flight/imu.h"
 #include "flight/navigation_rewrite.h"
-#include "flight/pid.h"
 
 #include "io/gps.h"
 #include "io/osd.h"
 #include "io/ledstrip.h"
 #include "io/serial.h"
-#include "io/servos.h"
 
 #include "telemetry/telemetry.h"
 
-#define flight3DConfig(x) (&masterConfig.flight3DConfig)
-#define flight3DConfigMutable(x) (&masterConfig.flight3DConfig)
-#define servoConfig(x) (&masterConfig.servoConfig)
-#define servoConfigMutable(x) (&masterConfig.servoConfig)
 #define servoMixerConfig(x) (&masterConfig.servoMixerConfig)
 #define servoMixerConfigMutable(x) (&masterConfig.servoMixerConfig)
-#define imuConfig(x) (&masterConfig.imuConfig)
-#define imuConfigMutable(x) (&masterConfig.imuConfig)
-#define rcControlsConfig(x) (&masterConfig.rcControlsConfig)
-#define rcControlsConfigMutable(x) (&masterConfig.rcControlsConfig)
-#define gpsConfig(x) (&masterConfig.gpsConfig)
-#define gpsConfigMutable(x) (&masterConfig.gpsConfig)
 #define navConfig(x) (&masterConfig.navConfig)
 #define navConfigMutable(x) (&masterConfig.navConfig)
-#define armingConfig(x) (&masterConfig.armingConfig)
-#define armingConfigMutable(x) (&masterConfig.armingConfig)
-#define serialConfig(x) (&masterConfig.serialConfig)
-#define serialConfigMutable(x) (&masterConfig.serialConfig)
 #define telemetryConfig(x) (&masterConfig.telemetryConfig)
 #define telemetryConfigMutable(x) (&masterConfig.telemetryConfig)
 #define osdProfile(x) (&masterConfig.osdProfile)
@@ -95,10 +79,7 @@ typedef struct master_s {
     uint8_t asyncMode;
 #endif
 
-    flight3DConfig_t flight3DConfig;
-
 #ifdef USE_SERVOS
-    servoConfig_t servoConfig;
     servoMixerConfig_t servoMixerConfig;
     servoMixer_t customServoMixer[MAX_SERVO_RULES];
 #endif
@@ -109,8 +90,6 @@ typedef struct master_s {
     adjustmentRange_t adjustmentRanges[MAX_ADJUSTMENT_RANGE_COUNT];
 
     // Radio/ESC-related configuration
-
-    rcControlsConfig_t rcControlsConfig;
 
     uint8_t throttle_tilt_compensation_strength;      // the correction that will be applied at throttle_correction_angle.
 
@@ -123,21 +102,12 @@ typedef struct master_s {
 
 #endif
 
-    imuConfig_t imuConfig;
-
-#ifdef GPS
-    gpsConfig_t gpsConfig;
-#endif
-
 #ifdef NAV
     navConfig_t navConfig;
 #endif
 
     pwmRxConfig_t pwmRxConfig;
 
-    armingConfig_t armingConfig;
-
-    serialConfig_t serialConfig;
 #ifdef TELEMETRY
     telemetryConfig_t telemetryConfig;
 #endif
@@ -153,12 +123,13 @@ typedef struct master_s {
 
     profile_t profile[MAX_PROFILE_COUNT];
     uint8_t current_profile_index;
-    controlRateConfig_t controlRateProfiles[MAX_CONTROL_RATE_PROFILE_COUNT];
 
     uint32_t beeper_off_flags;
     uint32_t preferred_beeper_off_flags;
 
     char name[MAX_NAME_LENGTH + 1];
+
+    uint8_t debug_mode;
 
     uint8_t magic_ef;                       // magic number, should be 0xEF
     uint8_t chk;                            // XOR checksum
@@ -169,7 +140,6 @@ typedef struct master_s {
 } master_t;
 
 extern master_t masterConfig;
-extern profile_t *currentProfile;
-extern controlRateConfig_t *currentControlRateProfile;
+extern const profile_t *currentProfile;
 
 void createDefaultConfig(master_t *config);

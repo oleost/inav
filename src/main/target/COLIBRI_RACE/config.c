@@ -49,8 +49,6 @@
 #include "io/beeper.h"
 #include "io/serial.h"
 #include "io/gimbal.h"
-#include "io/motors.h"
-#include "io/servos.h"
 #include "io/ledstrip.h"
 #include "io/gps.h"
 
@@ -74,6 +72,7 @@
 
 void targetConfiguration(master_t *config)
 {
+    (void)config;
     gyroConfigMutable()->looptime = 1000;
 
     rxConfigMutable()->rcmap[0] = 1;
@@ -89,8 +88,8 @@ void targetConfiguration(master_t *config)
     featureSet(FEATURE_LED_STRIP);
     featureSet(FEATURE_FAILSAFE);
 
-    config->serialConfig.portConfigs[0].functionMask = FUNCTION_MSP;
+    serialConfigMutable()->portConfigs[0].functionMask = FUNCTION_MSP;
     if (featureConfigured(FEATURE_RX_SERIAL)) {
-        config->serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
+        serialConfigMutable()->portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
     }
 }

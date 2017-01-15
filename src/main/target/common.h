@@ -24,6 +24,8 @@
 #define USE_SERVOS
 #define USE_CLI
 
+#define USE_RX_PWM
+#define USE_RX_PPM
 #define SERIAL_RX
 #define USE_SERIALRX_SPEKTRUM   // Cheap and fairly common protocol
 #define USE_SERIALRX_SBUS       // Very common protocol
@@ -40,6 +42,7 @@
 #define TELEMETRY_LTM
 #define USE_FLM_HEADLOCK
 #define USE_FLM_TURN_ASSIST
+#define TELEMETRY_FRSKY
 #else
 #define USE_PARAMETER_GROUPS // !!TODO temporarily set while implementing parameter groups
 #define SKIP_TASK_STATISTICS
@@ -48,6 +51,7 @@
 #endif
 
 #if (FLASH_SIZE > 128)
+#define USE_64BIT_TIME
 #define USE_GYRO_NOTCH_1
 #define USE_GYRO_NOTCH_2
 #define USE_DTERM_NOTCH
@@ -61,16 +65,18 @@
 #define GPS_PROTO_NAZA
 #define NAV_AUTO_MAG_DECLINATION
 #define NAV_GPS_GLITCH_DETECTION
-#define TELEMETRY_FRSKY
 #define TELEMETRY_HOTT
 #define TELEMETRY_IBUS
 #define TELEMETRY_MAVLINK
 #define TELEMETRY_SMARTPORT
+#define TELEMETRY_CRSF
 // These are rather exotic serial protocols
+#define USE_RX_MSP
 #define USE_SERIALRX_SUMD
 #define USE_SERIALRX_SUMH
 #define USE_SERIALRX_XBUS
 #define USE_SERIALRX_JETIEXBUS
+#define USE_SERIALRX_CRSF
 #define USE_PMW_SERVO_DRIVER
 #define PWM_DRIVER_PCA9685
 #define NAV_MAX_WAYPOINTS       60
@@ -79,7 +85,6 @@
 #define CLI_MINIMAL_VERBOSITY
 #define SKIP_CLI_COMMAND_HELP
 #define SKIP_CLI_RESOURCES
-#define SKIP_RX_MSP
 #define DISABLE_UNCOMMON_MIXERS
 #define NAV_MAX_WAYPOINTS       30
 #define MAX_BOOTLOG_ENTRIES     32

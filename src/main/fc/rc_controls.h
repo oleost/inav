@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "config/parameter_group.h"
+
 typedef enum {
     BOXARM = 0,
     BOXANGLE,
@@ -103,23 +105,6 @@ typedef enum {
 #define MIN_MODE_RANGE_STEP 0
 #define MAX_MODE_RANGE_STEP ((CHANNEL_RANGE_MAX - CHANNEL_RANGE_MIN) / 25)
 
-/*
-Max and min available values for rates are now stored as absolute
-tenths of degrees-per-second [dsp/10]
-That means, max. rotation rate 180 equals 1800dps
-
-New defaults of 200dps for pitch,roll and yaw are more less
-equivalent of rates 0 from previous versions of iNav, Cleanflight, Baseflight
-and so on.
-*/
-#define CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX  180
-#define CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MIN  6
-#define CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_DEFAULT  20
-#define CONTROL_RATE_CONFIG_YAW_RATE_MAX         180
-#define CONTROL_RATE_CONFIG_YAW_RATE_MIN         2
-#define CONTROL_RATE_CONFIG_YAW_RATE_DEFAULT     20
-
-#define CONTROL_RATE_CONFIG_TPA_MAX              100
 
 // steps are 25 apart
 // a value of 0 corresponds to a channel value of 900 or less
@@ -143,16 +128,6 @@ typedef enum {
     MODE_OPERATOR_AND
 } modeActivationOperator_e;
 
-typedef struct controlRateConfig_s {
-    uint8_t rcExpo8;
-    uint8_t thrMid8;
-    uint8_t thrExpo8;
-    uint8_t rates[3];
-    uint8_t dynThrPID;
-    uint8_t rcYawExpo8;
-    uint16_t tpa_breakpoint;                // Breakpoint where TPA is activated
-} controlRateConfig_t;
-
 extern int16_t rcCommand[4];
 
 typedef struct rcControlsConfig_s {
@@ -162,11 +137,15 @@ typedef struct rcControlsConfig_s {
     uint8_t alt_hold_deadband;             // Defines the neutral zone of throttle stick during altitude hold
 } rcControlsConfig_t;
 
+PG_DECLARE(rcControlsConfig_t, rcControlsConfig);
+
 typedef struct armingConfig_s {
     uint8_t fixed_wing_auto_arm;            // Auto-arm fixed wing aircraft on throttle up and never disarm
     uint8_t disarm_kill_switch;             // allow disarm via AUX switch regardless of throttle value
     uint8_t auto_disarm_delay;              // allow automatically disarming multicopters after auto_disarm_delay seconds of zero throttle. Disabled when 0
 } armingConfig_t;
+
+PG_DECLARE(armingConfig_t, armingConfig);
 
 bool areUsingSticksToArm(void);
 
@@ -260,12 +239,12 @@ typedef struct adjustmentState_s {
 void resetAdjustmentStates(void);
 void configureAdjustment(uint8_t index, uint8_t auxChannelIndex, const adjustmentConfig_t *adjustmentConfig);
 void updateAdjustmentStates(adjustmentRange_t *adjustmentRanges);
-void processRcAdjustments(controlRateConfig_t *controlRateConfig);
+struct controlRateConfig_s;
+void processRcAdjustments(const struct controlRateConfig_s *controlRateConfig);
 
 bool isUsingSticksForArming(void);
 bool isUsingNavigationModes(void);
 
 int32_t getRcStickDeflection(int32_t axis, uint16_t midrc);
 bool isModeActivationConditionPresent(modeActivationCondition_t *modeActivationConditions, boxId_e modeId);
-struct pidProfile_s;
-void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions, struct pidProfile_s *pidProfileToUse);
+void useRcControlsConfig(modeActivationCondition_t *modeActivationConditions);

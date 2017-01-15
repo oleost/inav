@@ -43,6 +43,7 @@
 #include "drivers/system.h"
 
 #include "fc/config.h"
+#include "fc/controlrate_profile.h"
 #include "fc/fc_msp.h"
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
@@ -66,10 +67,8 @@
 #include "io/gps.h"
 #include "io/gimbal.h"
 #include "io/ledstrip.h"
-#include "io/motors.h"
 #include "io/serial.h"
 #include "io/serial_4way.h"
-#include "io/servos.h"
 
 #include "msp/msp.h"
 #include "msp/msp_protocol.h"
@@ -97,7 +96,7 @@
 #include "hardware_revision.h"
 #endif
 
-extern uint16_t cycleTime; // FIXME dependency on mw.c
+extern timeDelta_t cycleTime; // FIXME dependency on mw.c
 extern uint16_t rssi; // FIXME dependency on mw.c
 
 static const char * const flightControllerIdentifier = INAV_IDENTIFIER; // 4 UPPER CASE alpha numeric characters that identify the flight controller.
@@ -556,7 +555,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_STATUS_EX:
-        sbufWriteU16(dst, cycleTime);
+        sbufWriteU16(dst, (uint16_t)cycleTime);
 #ifdef USE_I2C
         sbufWriteU16(dst, i2cGetErrorCounter());
 #else
@@ -564,13 +563,13 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #endif
         sbufWriteU16(dst, packSensorStatus());
         sbufWriteU32(dst, packFlightModeFlags());
-        sbufWriteU8(dst, masterConfig.current_profile_index);
+        sbufWriteU8(dst, getCurrentProfileIndex());
         sbufWriteU16(dst, averageSystemLoadPercent);
         sbufWriteU16(dst, armingFlags);
         break;
 
     case MSP_STATUS:
-        sbufWriteU16(dst, cycleTime);
+        sbufWriteU16(dst, (uint16_t)cycleTime);
 #ifdef USE_I2C
         sbufWriteU16(dst, i2cGetErrorCounter());
 #else
@@ -578,7 +577,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #endif
         sbufWriteU16(dst, packSensorStatus());
         sbufWriteU32(dst, packFlightModeFlags());
-        sbufWriteU8(dst, masterConfig.current_profile_index);
+        sbufWriteU8(dst, getCurrentProfileIndex());
         break;
 
     case MSP_RAW_IMU:
@@ -696,9 +695,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_PID:
         for (int i = 0; i < PID_ITEM_COUNT; i++) {
-            sbufWriteU8(dst, currentProfile->pidProfile.P8[i]);
-            sbufWriteU8(dst, currentProfile->pidProfile.I8[i]);
-            sbufWriteU8(dst, currentProfile->pidProfile.D8[i]);
+            sbufWriteU8(dst, pidProfile()->P8[i]);
+            sbufWriteU8(dst, pidProfile()->I8[i]);
+            sbufWriteU8(dst, pidProfile()->D8[i]);
         }
         break;
 
@@ -1068,8 +1067,8 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_FILTER_CONFIG :
         sbufWriteU8(dst, gyroConfig()->gyro_soft_lpf_hz);
-        sbufWriteU16(dst, currentProfile->pidProfile.dterm_lpf_hz);
-        sbufWriteU16(dst, currentProfile->pidProfile.yaw_lpf_hz);
+        sbufWriteU16(dst, pidProfile()->dterm_lpf_hz);
+        sbufWriteU16(dst, pidProfile()->yaw_lpf_hz);
 #ifdef USE_GYRO_NOTCH_1
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_hz_1); //masterConfig.gyro_soft_notch_hz_1
         sbufWriteU16(dst, gyroConfig()->gyro_soft_notch_cutoff_1); //BF: masterConfig.gyro_soft_notch_cutoff_1
@@ -1079,11 +1078,11 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 #endif
 
 #ifdef USE_DTERM_NOTCH
-        sbufWriteU16(dst, currentProfile->pidProfile.dterm_soft_notch_hz); //BF: currentProfile->pidProfile.dterm_notch_hz
-        sbufWriteU16(dst, currentProfile->pidProfile.dterm_soft_notch_cutoff); //currentProfile->pidProfile.dterm_notch_cutoff
+        sbufWriteU16(dst, pidProfile()->dterm_soft_notch_hz); //BF: pidProfile()->dterm_notch_hz
+        sbufWriteU16(dst, pidProfile()->dterm_soft_notch_cutoff); //pidProfile()->dterm_notch_cutoff
 #else       
-        sbufWriteU16(dst, 1); //BF: currentProfile->pidProfile.dterm_notch_hz
-        sbufWriteU16(dst, 1); //currentProfile->pidProfile.dterm_notch_cutoff
+        sbufWriteU16(dst, 1); //BF: pidProfile()->dterm_notch_hz
+        sbufWriteU16(dst, 1); //pidProfile()->dterm_notch_cutoff
 #endif
             
 #ifdef USE_GYRO_NOTCH_2
@@ -1096,23 +1095,23 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
         break;
 
     case MSP_PID_ADVANCED:
-        sbufWriteU16(dst, currentProfile->pidProfile.rollPitchItermIgnoreRate);
-        sbufWriteU16(dst, currentProfile->pidProfile.yawItermIgnoreRate);
-        sbufWriteU16(dst, currentProfile->pidProfile.yaw_p_limit);
-        sbufWriteU8(dst, 0); //BF: currentProfile->pidProfile.deltaMethod
-        sbufWriteU8(dst, 0); //BF: currentProfile->pidProfile.vbatPidCompensation
-        sbufWriteU8(dst, 0); //BF: currentProfile->pidProfile.setpointRelaxRatio
-        sbufWriteU8(dst, 0); //BF: currentProfile->pidProfile.dtermSetpointWeight
+        sbufWriteU16(dst, pidProfile()->rollPitchItermIgnoreRate);
+        sbufWriteU16(dst, pidProfile()->yawItermIgnoreRate);
+        sbufWriteU16(dst, pidProfile()->yaw_p_limit);
+        sbufWriteU8(dst, 0); //BF: pidProfile()->deltaMethod
+        sbufWriteU8(dst, 0); //BF: pidProfile()->vbatPidCompensation
+        sbufWriteU8(dst, 0); //BF: pidProfile()->setpointRelaxRatio
+        sbufWriteU8(dst, constrain(pidProfile()->dterm_setpoint_weight * 100, 0, 255));
         sbufWriteU8(dst, 0); // reserved
         sbufWriteU8(dst, 0); // reserved
-        sbufWriteU8(dst, 0); //BF: currentProfile->pidProfile.itermThrottleGain
+        sbufWriteU8(dst, 0); //BF: pidProfile()->itermThrottleGain
 
         /*
          * To keep compatibility on MSP frame length level with Betaflight, axis axisAccelerationLimitYaw
          * limit will be sent and received in [dps / 10]
          */
-        sbufWriteU16(dst, constrain(currentProfile->pidProfile.axisAccelerationLimitRollPitch / 10, 0, 65535));
-        sbufWriteU16(dst, constrain(currentProfile->pidProfile.axisAccelerationLimitYaw / 10, 0, 65535));
+        sbufWriteU16(dst, constrain(pidProfile()->axisAccelerationLimitRollPitch / 10, 0, 65535));
+        sbufWriteU16(dst, constrain(pidProfile()->axisAccelerationLimitYaw / 10, 0, 65535));
         break;
 
     case MSP_INAV_PID:
@@ -1134,7 +1133,7 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
     #endif
         sbufWriteU16(dst, mixerConfig()->yaw_jump_prevention_limit);
         sbufWriteU8(dst, gyroConfig()->gyro_lpf);
-        sbufWriteU8(dst, currentProfile->pidProfile.acc_soft_lpf_hz);
+        sbufWriteU8(dst, pidProfile()->acc_soft_lpf_hz);
         sbufWriteU8(dst, 0); //reserved
         sbufWriteU8(dst, 0); //reserved
         sbufWriteU8(dst, 0); //reserved
@@ -1252,10 +1251,8 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #endif
     case MSP_SELECT_SETTING:
         if (!ARMING_FLAG(ARMED)) {
-            masterConfig.current_profile_index = sbufReadU8(src);
-            if (masterConfig.current_profile_index > 2) {
-                masterConfig.current_profile_index = 0;
-            }
+            const uint8_t profileIndex = sbufReadU8(src);
+            setProfile(profileIndex);
             writeEEPROM();
             readEEPROM();
         }
@@ -1266,7 +1263,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_RAW_RC:
-#ifndef SKIP_RX_MSP
+#ifdef USE_RX_MSP
         {
             uint8_t channelCount = dataSize / sizeof(uint16_t);
             if (channelCount > MAX_SUPPORTED_RC_CHANNEL_COUNT) {
@@ -1297,13 +1294,13 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
     case MSP_SET_PID:
         for (int i = 0; i < PID_ITEM_COUNT; i++) {
-            currentProfile->pidProfile.P8[i] = sbufReadU8(src);
-            currentProfile->pidProfile.I8[i] = sbufReadU8(src);
-            currentProfile->pidProfile.D8[i] = sbufReadU8(src);
+            pidProfileMutable()->P8[i] = sbufReadU8(src);
+            pidProfileMutable()->I8[i] = sbufReadU8(src);
+            pidProfileMutable()->D8[i] = sbufReadU8(src);
         }
         schedulePidGainsUpdate();
 #if defined(NAV)
-        navigationUsePIDs(&currentProfile->pidProfile);
+        navigationUsePIDs();
 #endif
         break;
 
@@ -1319,7 +1316,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
                 mac->range.startStep = sbufReadU8(src);
                 mac->range.endStep = sbufReadU8(src);
 
-                useRcControlsConfig(masterConfig.modeActivationConditions, &currentProfile->pidProfile);
+                useRcControlsConfig(masterConfig.modeActivationConditions);
             } else {
                 return MSP_RESULT_ERROR;
             }
@@ -1351,23 +1348,24 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
     case MSP_SET_RC_TUNING:
         if (dataSize >= 10) {
             sbufReadU8(src); //Read rcRate8, kept for protocol compatibility reasons
-            currentControlRateProfile->rcExpo8 = sbufReadU8(src);
+            // need to cast away const to set controlRateProfile
+            ((controlRateConfig_t*)currentControlRateProfile)->rcExpo8 = sbufReadU8(src);
             for (int i = 0; i < 3; i++) {
                 rate = sbufReadU8(src);
                 if (i == FD_YAW) {
-                    currentControlRateProfile->rates[i] = constrain(rate, CONTROL_RATE_CONFIG_YAW_RATE_MIN, CONTROL_RATE_CONFIG_YAW_RATE_MAX);
+                    ((controlRateConfig_t*)currentControlRateProfile)->rates[i] = constrain(rate, CONTROL_RATE_CONFIG_YAW_RATE_MIN, CONTROL_RATE_CONFIG_YAW_RATE_MAX);
                 }
                 else {
-                    currentControlRateProfile->rates[i] = constrain(rate, CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MIN, CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX);
+                    ((controlRateConfig_t*)currentControlRateProfile)->rates[i] = constrain(rate, CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MIN, CONTROL_RATE_CONFIG_ROLL_PITCH_RATE_MAX);
                 }
             }
             rate = sbufReadU8(src);
-            currentControlRateProfile->dynThrPID = MIN(rate, CONTROL_RATE_CONFIG_TPA_MAX);
-            currentControlRateProfile->thrMid8 = sbufReadU8(src);
-            currentControlRateProfile->thrExpo8 = sbufReadU8(src);
-            currentControlRateProfile->tpa_breakpoint = sbufReadU16(src);
+            ((controlRateConfig_t*)currentControlRateProfile)->dynThrPID = MIN(rate, CONTROL_RATE_CONFIG_TPA_MAX);
+            ((controlRateConfig_t*)currentControlRateProfile)->thrMid8 = sbufReadU8(src);
+            ((controlRateConfig_t*)currentControlRateProfile)->thrExpo8 = sbufReadU8(src);
+            ((controlRateConfig_t*)currentControlRateProfile)->tpa_breakpoint = sbufReadU16(src);
             if (dataSize >= 11) {
-                currentControlRateProfile->rcYawExpo8 = sbufReadU8(src);
+                ((controlRateConfig_t*)currentControlRateProfile)->rcYawExpo8 = sbufReadU8(src);
             }
 
             schedulePidGainsUpdate();
@@ -1474,7 +1472,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         break;
 
     case MSP_SET_RESET_CURR_PID:
-        resetPidProfile(&currentProfile->pidProfile);
+        PG_RESET_CURRENT(pidProfile);
         break;
 
     case MSP_SET_SENSOR_ALIGNMENT:
@@ -1503,48 +1501,42 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
     case MSP_SET_FILTER_CONFIG :
         gyroConfigMutable()->gyro_soft_lpf_hz = sbufReadU8(src);
-        currentProfile->pidProfile.dterm_lpf_hz = constrain(sbufReadU16(src), 0, 255);
-        currentProfile->pidProfile.yaw_lpf_hz = constrain(sbufReadU16(src), 0, 255);
+        pidProfileMutable()->dterm_lpf_hz = constrain(sbufReadU16(src), 0, 255);
+        pidProfileMutable()->yaw_lpf_hz = constrain(sbufReadU16(src), 0, 255);
 #ifdef USE_GYRO_NOTCH_1
         gyroConfigMutable()->gyro_soft_notch_hz_1 = constrain(sbufReadU16(src), 0, 500);
         gyroConfigMutable()->gyro_soft_notch_cutoff_1 = constrain(sbufReadU16(src), 1, 500);
 #endif
 #ifdef USE_DTERM_NOTCH
-        currentProfile->pidProfile.dterm_soft_notch_hz = constrain(sbufReadU16(src), 0, 500);
-        currentProfile->pidProfile.dterm_soft_notch_cutoff = constrain(sbufReadU16(src), 1, 500);
+        pidProfileMutable()->dterm_soft_notch_hz = constrain(sbufReadU16(src), 0, 500);
+        pidProfileMutable()->dterm_soft_notch_cutoff = constrain(sbufReadU16(src), 1, 500);
         pidInitFilters(&currentProfile->pidProfile);
 #endif
 #ifdef USE_GYRO_NOTCH_2
         gyroConfigMutable()->gyro_soft_notch_hz_2 = constrain(sbufReadU16(src), 0, 500);
         gyroConfigMutable()->gyro_soft_notch_cutoff_2 = constrain(sbufReadU16(src), 1, 500);
 #endif
-        //BF: masterConfig.gyro_soft_notch_hz_1 = read16();
-        //BF: masterConfig.gyro_soft_notch_cutoff_1 = read16();
-        //BF: currentProfile->pidProfile.dterm_notch_hz = read16();
-        //BF: currentProfile->pidProfile.dterm_notch_cutoff = read16();
-        //BF: masterConfig.gyro_soft_notch_hz_2 = read16();
-        //BF: masterConfig.gyro_soft_notch_cutoff_2 = read16();
         break;
 
     case MSP_SET_PID_ADVANCED:
-        currentProfile->pidProfile.rollPitchItermIgnoreRate = sbufReadU16(src);
-        currentProfile->pidProfile.yawItermIgnoreRate = sbufReadU16(src);
-        currentProfile->pidProfile.yaw_p_limit = sbufReadU16(src);
+        pidProfileMutable()->rollPitchItermIgnoreRate = sbufReadU16(src);
+        pidProfileMutable()->yawItermIgnoreRate = sbufReadU16(src);
+        pidProfileMutable()->yaw_p_limit = sbufReadU16(src);
 
-        sbufReadU8(src); //BF: currentProfile->pidProfile.deltaMethod
-        sbufReadU8(src); //BF: currentProfile->pidProfile.vbatPidCompensation
-        sbufReadU8(src); //BF: currentProfile->pidProfile.setpointRelaxRatio
-        sbufReadU8(src); //BF: currentProfile->pidProfile.dtermSetpointWeight
+        sbufReadU8(src); //BF: pidProfileMutable()->deltaMethod
+        sbufReadU8(src); //BF: pidProfileMutable()->vbatPidCompensation
+        sbufReadU8(src); //BF: pidProfileMutable()->setpointRelaxRatio
+        pidProfileMutable()->dterm_setpoint_weight = constrainf(sbufReadU8(src) / 100.0f, 0.0f, 2.0f);
         sbufReadU8(src); // reserved
         sbufReadU8(src); // reserved
-        sbufReadU8(src); //BF: currentProfile->pidProfile.itermThrottleGain
+        sbufReadU8(src); //BF: pidProfileMutable()->itermThrottleGain
 
         /*
          * To keep compatibility on MSP frame length level with Betaflight, axis axisAccelerationLimitYaw
          * limit will be sent and received in [dps / 10]
          */
-        currentProfile->pidProfile.axisAccelerationLimitRollPitch = sbufReadU16(src) * 10;
-        currentProfile->pidProfile.axisAccelerationLimitYaw = sbufReadU16(src) * 10;
+        pidProfileMutable()->axisAccelerationLimitRollPitch = sbufReadU16(src) * 10;
+        pidProfileMutable()->axisAccelerationLimitYaw = sbufReadU16(src) * 10;
         break;
 
     case MSP_SET_INAV_PID:
@@ -1566,7 +1558,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
         #endif
             mixerConfigMutable()->yaw_jump_prevention_limit = sbufReadU16(src);
             gyroConfigMutable()->gyro_lpf = sbufReadU8(src);
-            currentProfile->pidProfile.acc_soft_lpf_hz = sbufReadU8(src);
+            pidProfileMutable()->acc_soft_lpf_hz = sbufReadU8(src);
             sbufReadU8(src); //reserved
             sbufReadU8(src); //reserved
             sbufReadU8(src); //reserved
