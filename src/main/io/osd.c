@@ -355,22 +355,19 @@ static void osdDrawSingleElement(uint8_t item)
 
         case OSD_ROLL_PIDS:
         {
-            const pidProfile_t *pidProfile = &currentProfile->pidProfile;
-            sprintf(buff, "ROL %3d %3d %3d", pidProfile->P8[PIDROLL], pidProfile->I8[PIDROLL], pidProfile->D8[PIDROLL]);
+            sprintf(buff, "ROL %3d %3d %3d", pidBank()->P8[PIDROLL], pidBank()->I8[PIDROLL], pidBank()->D8[PIDROLL]);
             break;
         }
 
         case OSD_PITCH_PIDS:
         {
-            const pidProfile_t *pidProfile = &currentProfile->pidProfile;
-            sprintf(buff, "PIT %3d %3d %3d", pidProfile->P8[PIDPITCH], pidProfile->I8[PIDPITCH], pidProfile->D8[PIDPITCH]);
+            sprintf(buff, "PIT %3d %3d %3d", pidBank()->P8[PIDPITCH], pidBank()->I8[PIDPITCH], pidBank()->D8[PIDPITCH]);
             break;
         }
 
         case OSD_YAW_PIDS:
         {
-            const pidProfile_t *pidProfile = &currentProfile->pidProfile;
-            sprintf(buff, "YAW %3d %3d %3d", pidProfile->P8[PIDYAW], pidProfile->I8[PIDYAW], pidProfile->D8[PIDYAW]);
+            sprintf(buff, "YAW %3d %3d %3d", pidBank()->P8[PIDYAW], pidBank()->I8[PIDYAW], pidBank()->D8[PIDYAW]);
             break;
         }
 

@@ -696,9 +696,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_PID:
         for (int i = 0; i < PID_ITEM_COUNT; i++) {
-            sbufWriteU8(dst, pidProfile()->P8[i]);
-            sbufWriteU8(dst, pidProfile()->I8[i]);
-            sbufWriteU8(dst, pidProfile()->D8[i]);
+            sbufWriteU8(dst, pidBank()->P8[i]);
+            sbufWriteU8(dst, pidBank()->I8[i]);
+            sbufWriteU8(dst, pidBank()->D8[i]);
         }
         break;
 
@@ -1324,9 +1324,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
     case MSP_SET_PID:
         for (int i = 0; i < PID_ITEM_COUNT; i++) {
-            pidProfileMutable()->P8[i] = sbufReadU8(src);
-            pidProfileMutable()->I8[i] = sbufReadU8(src);
-            pidProfileMutable()->D8[i] = sbufReadU8(src);
+            pidBankMutable()->P8[i] = sbufReadU8(src);
+            pidBankMutable()->I8[i] = sbufReadU8(src);
+            pidBankMutable()->D8[i] = sbufReadU8(src);
         }
         schedulePidGainsUpdate();
 #if defined(NAV)
@@ -1540,7 +1540,7 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 #ifdef USE_DTERM_NOTCH
         pidProfileMutable()->dterm_soft_notch_hz = constrain(sbufReadU16(src), 0, 500);
         pidProfileMutable()->dterm_soft_notch_cutoff = constrain(sbufReadU16(src), 1, 500);
-        pidInitFilters(&currentProfile->pidProfile);
+        pidInitFilters();
 #endif
 #ifdef USE_GYRO_NOTCH_2
         gyroConfigMutable()->gyro_soft_notch_hz_2 = constrain(sbufReadU16(src), 0, 500);

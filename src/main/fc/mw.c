@@ -660,10 +660,10 @@ void taskMainPidLoop(timeUs_t currentTimeUs)
     }
 
     // Update PID coefficients
-    updatePIDCoefficients(&currentProfile->pidProfile, currentControlRateProfile, motorConfig());
+    updatePIDCoefficients();
 
     // Calculate stabilisation
-    pidController(&currentProfile->pidProfile, currentControlRateProfile, rxConfig());
+    pidController();
 
 #ifdef HIL
     if (hilActive) {
