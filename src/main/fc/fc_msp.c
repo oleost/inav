@@ -696,9 +696,9 @@ static bool mspFcProcessOutCommand(uint8_t cmdMSP, sbuf_t *dst, mspPostProcessFn
 
     case MSP_PID:
         for (int i = 0; i < PID_ITEM_COUNT; i++) {
-            sbufWriteU8(dst, pidBank()->P8[i]);
-            sbufWriteU8(dst, pidBank()->I8[i]);
-            sbufWriteU8(dst, pidBank()->D8[i]);
+            sbufWriteU8(dst, pidBank()[i].P);
+            sbufWriteU8(dst, pidBank()[i].I);
+            sbufWriteU8(dst, pidBank()[i].D);
         }
         break;
 
@@ -1324,9 +1324,9 @@ static mspResult_e mspFcProcessInCommand(uint8_t cmdMSP, sbuf_t *src)
 
     case MSP_SET_PID:
         for (int i = 0; i < PID_ITEM_COUNT; i++) {
-            pidBankMutable()->P8[i] = sbufReadU8(src);
-            pidBankMutable()->I8[i] = sbufReadU8(src);
-            pidBankMutable()->D8[i] = sbufReadU8(src);
+            pidBankMutable()[i].P = sbufReadU8(src);
+            pidBankMutable()[i].I = sbufReadU8(src);
+            pidBankMutable()[i].D = sbufReadU8(src);
         }
         schedulePidGainsUpdate();
 #if defined(NAV)

@@ -49,15 +49,15 @@ typedef enum {
     PID_ITEM_COUNT
 } pidIndex_e;
 
-typedef struct pidBank_s {
-    uint8_t P8[PID_ITEM_COUNT];
-    uint8_t I8[PID_ITEM_COUNT];
-    uint8_t D8[PID_ITEM_COUNT];
-} pidBank_t;
+typedef struct pid8_s {
+    uint8_t P;
+    uint8_t I;
+    uint8_t D;
+} pid8_t;
 
 typedef struct pidProfile_s {
-    pidBank_t bank_fw;
-    pidBank_t bank_mc;
+    pid8_t  bank_fw[PID_ITEM_COUNT];
+    pid8_t  bank_mc[PID_ITEM_COUNT];
 
     uint8_t dterm_lpf_hz;                   // (default 17Hz, Range 1-50Hz) Used for PT1 element in PID1, PID2 and PID5
     uint8_t yaw_pterm_lpf_hz;               // Used for filering Pterm noise on noisy frames
@@ -83,8 +83,8 @@ typedef struct pidProfile_s {
 
 PG_DECLARE_PROFILE(pidProfile_t, pidProfile);
 
-static inline const pidBank_t * pidBank() { return STATE(FIXED_WING) ? &pidProfile()->bank_fw : &pidProfile()->bank_mc; }
-static inline pidBank_t * pidBankMutable() { return STATE(FIXED_WING) ? &pidProfileMutable()->bank_fw : &pidProfileMutable()->bank_mc; }
+static inline const pid8_t * pidBank() { return STATE(FIXED_WING) ? pidProfile()->bank_fw : pidProfile()->bank_mc; }
+static inline pid8_t * pidBankMutable() { return STATE(FIXED_WING) ? pidProfileMutable()->bank_fw : pidProfileMutable()->bank_mc; }
 
 extern int16_t axisPID[];
 extern int32_t axisPID_P[], axisPID_I[], axisPID_D[], axisPID_Setpoint[];
