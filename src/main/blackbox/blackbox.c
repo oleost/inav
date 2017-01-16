@@ -487,7 +487,7 @@ static bool testBlackboxConditionUncached(FlightLogFieldCondition condition)
         case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0:
         case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_1:
         case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_2:
-            return pidBank()->D8[condition - FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0] != 0;
+            return pidBank()[condition - FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0].D != 0;
 
         case FLIGHT_LOG_FIELD_CONDITION_MAG:
 #ifdef MAG
@@ -1376,31 +1376,31 @@ static bool blackboxWriteSysinfo()
         BLACKBOX_PRINT_HEADER_LINE("rates:%d,%d,%d",                        currentControlRateProfile->rates[ROLL],
                                                                             currentControlRateProfile->rates[PITCH],
                                                                             currentControlRateProfile->rates[YAW]);
-        BLACKBOX_PRINT_HEADER_LINE("rollPID:%d,%d,%d",                      pidBank()->P8[PID_ROLL],
-                                                                            pidBank()->I8[PID_ROLL],
-                                                                            pidBank()->D8[PID_ROLL]);
-        BLACKBOX_PRINT_HEADER_LINE("pitchPID:%d,%d,%d",                     pidBank()->P8[PID_PITCH],
-                                                                            pidBank()->I8[PID_PITCH],
-                                                                            pidBank()->D8[PID_PITCH]);
-        BLACKBOX_PRINT_HEADER_LINE("yawPID:%d,%d,%d",                       pidBank()->P8[PID_YAW],
-                                                                            pidBank()->I8[PID_YAW],
-                                                                            pidBank()->D8[PID_YAW]);
-        BLACKBOX_PRINT_HEADER_LINE("altPID:%d,%d,%d",                       pidBank()->P8[PID_POS_Z],
-                                                                            pidBank()->I8[PID_POS_Z],
-                                                                            pidBank()->D8[PID_POS_Z]);
-        BLACKBOX_PRINT_HEADER_LINE("posPID:%d,%d,%d",                       pidBank()->P8[PID_POS_XY],
-                                                                            pidBank()->I8[PID_POS_XY],
-                                                                            pidBank()->D8[PID_POS_XY]);
-        BLACKBOX_PRINT_HEADER_LINE("posrPID:%d,%d,%d",                      pidBank()->P8[PID_VEL_XY],
-                                                                            pidBank()->I8[PID_VEL_XY],
-                                                                            pidBank()->D8[PID_VEL_XY]);
-        BLACKBOX_PRINT_HEADER_LINE("levelPID:%d,%d,%d",                     pidBank()->P8[PID_LEVEL],
-                                                                            pidBank()->I8[PID_LEVEL],
-                                                                            pidBank()->D8[PID_LEVEL]);
-        BLACKBOX_PRINT_HEADER_LINE("magPID:%d",                             pidBank()->P8[PID_HEADING]);
-        BLACKBOX_PRINT_HEADER_LINE("velPID:%d,%d,%d",                       pidBank()->P8[PID_VEL_Z],
-                                                                            pidBank()->I8[PID_VEL_Z],
-                                                                            pidBank()->D8[PID_VEL_Z]);
+        BLACKBOX_PRINT_HEADER_LINE("rollPID:%d,%d,%d",                      pidBank()[PID_ROLL].P,
+                                                                            pidBank()[PID_ROLL].I,
+                                                                            pidBank()[PID_ROLL].D);
+        BLACKBOX_PRINT_HEADER_LINE("pitchPID:%d,%d,%d",                     pidBank()[PID_PITCH].P,
+                                                                            pidBank()[PID_PITCH].I,
+                                                                            pidBank()[PID_PITCH].D);
+        BLACKBOX_PRINT_HEADER_LINE("yawPID:%d,%d,%d",                       pidBank()[PID_YAW].P,
+                                                                            pidBank()[PID_YAW].I,
+                                                                            pidBank()[PID_YAW].D);
+        BLACKBOX_PRINT_HEADER_LINE("altPID:%d,%d,%d",                       pidBank()[PID_POS_Z].P,
+                                                                            pidBank()[PID_POS_Z].I,
+                                                                            pidBank()[PID_POS_Z].D);
+        BLACKBOX_PRINT_HEADER_LINE("posPID:%d,%d,%d",                       pidBank()[PID_POS_XY].P,
+                                                                            pidBank()[PID_POS_XY].I,
+                                                                            pidBank()[PID_POS_XY].D);
+        BLACKBOX_PRINT_HEADER_LINE("posrPID:%d,%d,%d",                      pidBank()[PID_VEL_XY].P,
+                                                                            pidBank()[PID_VEL_XY].I,
+                                                                            pidBank()[PID_VEL_XY].D);
+        BLACKBOX_PRINT_HEADER_LINE("levelPID:%d,%d,%d",                     pidBank()[PID_LEVEL].P,
+                                                                            pidBank()[PID_LEVEL].I,
+                                                                            pidBank()[PID_LEVEL].D);
+        BLACKBOX_PRINT_HEADER_LINE("magPID:%d",                             pidBank()[PID_HEADING].P);
+        BLACKBOX_PRINT_HEADER_LINE("velPID:%d,%d,%d",                       pidBank()[PID_VEL_Z].P,
+                                                                            pidBank()[PID_VEL_Z].I,
+                                                                            pidBank()[PID_VEL_Z].D);
         BLACKBOX_PRINT_HEADER_LINE("yaw_p_limit:%d",                        currentProfile->pidProfile.yaw_p_limit);
         BLACKBOX_PRINT_HEADER_LINE("yaw_lpf_hz:%d",                         (int)(currentProfile->pidProfile.yaw_lpf_hz * 100.0f));
         BLACKBOX_PRINT_HEADER_LINE("dterm_lpf_hz:%d",                       (int)(currentProfile->pidProfile.dterm_lpf_hz * 100.0f));

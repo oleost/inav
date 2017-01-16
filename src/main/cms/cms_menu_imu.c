@@ -67,16 +67,16 @@ static char rateProfileIndexString[] = " r";
 
 static void cmsx_ReadPidToArray(uint8_t *dst, int pidIndex)
 {
-    dst[0] = pidBank()->P8[pidIndex];
-    dst[1] = pidBank()->I8[pidIndex];
-    dst[2] = pidBank()->D8[pidIndex];
+    dst[0] = pidBank()[pidIndex].P;
+    dst[1] = pidBank()[pidIndex].I;
+    dst[2] = pidBank()[pidIndex].D;
 }
 
 static void cmsx_WritebackPidFromArray(uint8_t *src, int pidIndex)
 {
-    pidBankMutable()->P8[pidIndex] = src[0];
-    pidBankMutable()->I8[pidIndex] = src[1];
-    pidBankMutable()->D8[pidIndex] = src[2];
+    pidBankMutable()[pidIndex].P = src[0];
+    pidBankMutable()[pidIndex].I = src[1];
+    pidBankMutable()[pidIndex].D = src[2];
 }
 
 static long cmsx_menuImu_onEnter(void)
@@ -195,7 +195,7 @@ static long cmsx_menuPidAltMag_onEnter(void)
 {
     cmsx_ReadPidToArray(cmsx_pidPosZ, PID_POS_Z);
     cmsx_ReadPidToArray(cmsx_pidVelZ, PID_VEL_Z);
-    cmsx_pidHead[0] = pidBank()->P8[PID_HEADING];
+    cmsx_pidHead[0] = pidBank()[PID_HEADING].P;
 
     return 0;
 }
@@ -206,7 +206,7 @@ static long cmsx_menuPidAltMag_onExit(const OSD_Entry *self)
 
     cmsx_WritebackPidFromArray(cmsx_pidPosZ, PID_POS_Z);
     cmsx_WritebackPidFromArray(cmsx_pidVelZ, PID_VEL_Z);
-    pidBankMutable()->P8[PID_HEADING] = cmsx_pidHead[0];
+    pidBankMutable()[PID_HEADING].P = cmsx_pidHead[0];
 
     navigationUsePIDs();
 
@@ -373,9 +373,9 @@ static long cmsx_profileOtherOnEnter(void)
     cmsx_dtermSetpointWeight = pidProfile()->dtermSetpointWeight;
     cmsx_setpointRelaxRatio  = pidProfile()->setpointRelaxRatio;
 
-    cmsx_angleStrength       = pidProfile()->P8[PIDLEVEL];
-    cmsx_horizonStrength     = pidProfile()->I8[PIDLEVEL];
-    cmsx_horizonTransition   = pidProfile()->D8[PIDLEVEL];
+    cmsx_angleStrength       = pidProfile()[PIDLEVEL].P;
+    cmsx_horizonStrength     = pidProfile()[PIDLEVEL].I;
+    cmsx_horizonTransition   = pidProfile()[PIDLEVEL].D;
 
     return 0;
 }
@@ -387,9 +387,9 @@ static long cmsx_profileOtherOnExit(const OSD_Entry *self)
     pidProfileMutable()->dtermSetpointWeight = cmsx_dtermSetpointWeight;
     pidProfileMutable()->setpointRelaxRatio  = cmsx_setpointRelaxRatio;
 
-    pidProfileMutable()->P8[PIDLEVEL]        = cmsx_angleStrength;
-    pidProfileMutable()->I8[PIDLEVEL]        = cmsx_horizonStrength;
-    pidProfileMutable()->D8[PIDLEVEL]        = cmsx_horizonTransition;
+    pidProfileMutable()[PIDLEVEL].P        = cmsx_angleStrength;
+    pidProfileMutable()[PIDLEVEL].I        = cmsx_horizonStrength;
+    pidProfileMutable()[PIDLEVEL].D        = cmsx_horizonTransition;
 
     return 0;
 }
