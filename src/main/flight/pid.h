@@ -36,16 +36,16 @@
 
 typedef enum {
     /* PID              MC      FW  */
-    PIDROLL,        //   +       +
-    PIDPITCH,       //   +       +
-    PIDYAW,         //   +       +
-    PIDZPOS,        //   +       +
-    PIDXYPOS,       //   +       +
-    PIDXYRATE,      //   +       n/a
-    PIDSURFACE,     //   n/a     n/a
-    PIDLEVEL,       //   +       +
-    PIDHEADING,     //   +       +
-    PIDZRATE,       //   +       n/a
+    PID_ROLL,       //   +       +
+    PID_PITCH,      //   +       +
+    PID_YAW,        //   +       +
+    PID_POS_Z,      //   +       +
+    PID_POS_XY,     //   +       +
+    PID_VEL_XY,     //   +       n/a
+    PID_SURFACE,    //   n/a     n/a
+    PID_LEVEL,      //   +       +
+    PID_HEADING,    //   +       +
+    PID_VEL_Z,      //   +       n/a
     PID_ITEM_COUNT
 } pidIndex_e;
 

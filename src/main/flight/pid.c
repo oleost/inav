@@ -112,53 +112,53 @@ PG_REGISTER_PROFILE_WITH_RESET_TEMPLATE(pidProfile_t, pidProfile, PG_PID_PROFILE
 
 PG_RESET_TEMPLATE(pidProfile_t, pidProfile,
         .bank_mc = {
-            .P8[ROLL] = 40,
-            .I8[ROLL] = 30,
-            .D8[ROLL] = 23,
-            .P8[PITCH] = 40,
-            .I8[PITCH] = 30,
-            .D8[PITCH] = 23,
-            .P8[YAW] = 85,
-            .I8[YAW] = 45,
-            .D8[YAW] = 0,           // not used
-            .P8[PIDLEVEL] = 20,     // Self-level strength
-            .I8[PIDLEVEL] = 15,     // Self-leveing low-pass frequency (0 - disabled)
-            .D8[PIDLEVEL] = 75,     // 75% horizon strength
-            .P8[PIDHEADING] = 60,
-            .P8[PIDXYPOS] = 65,     // NAV_POS_XY_P * 100
-            .I8[PIDXYPOS] = 120,    // posDecelerationTime * 100
-            .D8[PIDXYPOS] = 10,     // posResponseExpo * 100
-            .P8[PIDXYRATE] = 180,   // NAV_VEL_XY_P * 100
-            .I8[PIDXYRATE] = 15,    // NAV_VEL_XY_I * 100
-            .D8[PIDXYRATE] = 100,   // NAV_VEL_XY_D * 100
-            .P8[PIDZPOS] = 50,      // NAV_POS_Z_P * 100
-            .I8[PIDZPOS] = 0,       // not used
-            .D8[PIDZPOS] = 0,       // not used
-            .P8[PIDZRATE] = 100,    // NAV_VEL_Z_P * 100
-            .I8[PIDZRATE] = 50,     // NAV_VEL_Z_I * 100
-            .D8[PIDZRATE] = 10,     // NAV_VEL_Z_D * 100
+            .P8[PID_ROLL] = 40,
+            .I8[PID_ROLL] = 30,
+            .D8[PID_ROLL] = 23,
+            .P8[PID_PITCH] = 40,
+            .I8[PID_PITCH] = 30,
+            .D8[PID_PITCH] = 23,
+            .P8[PID_YAW] = 85,
+            .I8[PID_YAW] = 45,
+            .D8[PID_YAW] = 0,       // not used
+            .P8[PID_LEVEL] = 20,    // Self-level strength
+            .I8[PID_LEVEL] = 15,    // Self-leveing low-pass frequency (0 - disabled)
+            .D8[PID_LEVEL] = 75,    // 75% horizon strength
+            .P8[PID_HEADING] = 60,
+            .P8[PID_POS_XY] = 65,   // NAV_POS_XY_P * 100
+            .I8[PID_POS_XY] = 120,  // posDecelerationTime * 100
+            .D8[PID_POS_XY] = 10,   // posResponseExpo * 100
+            .P8[PID_VEL_XY] = 180,  // NAV_VEL_XY_P * 100
+            .I8[PID_VEL_XY] = 15,   // NAV_VEL_XY_I * 100
+            .D8[PID_VEL_XY] = 100,  // NAV_VEL_XY_D * 100
+            .P8[PID_POS_Z] = 50,    // NAV_POS_Z_P * 100
+            .I8[PID_POS_Z] = 0,     // not used
+            .D8[PID_POS_Z] = 0,     // not used
+            .P8[PID_VEL_Z] = 100,   // NAV_VEL_Z_P * 100
+            .I8[PID_VEL_Z] = 50,    // NAV_VEL_Z_I * 100
+            .D8[PID_VEL_Z] = 10,    // NAV_VEL_Z_D * 100
         },
 
         .bank_fw = {
-            .P8[ROLL] = 20,
-            .I8[ROLL] = 30,
-            .D8[ROLL] = 0,
-            .P8[PITCH] = 20,
-            .I8[PITCH] = 30,
-            .D8[PITCH] = 0,
-            .P8[YAW] = 50,
-            .I8[YAW] = 45,
-            .D8[YAW] = 0,           // not used
-            .P8[PIDZPOS] = 50,      // NAV_POS_Z_P * 100
-            .I8[PIDZPOS] = 0,
-            .D8[PIDZPOS] = 0,
-            .P8[PIDXYPOS] = 30,     // FW_NAV_P * 100
-            .I8[PIDXYPOS] = 5,      // FW_NAV_I * 100
-            .D8[PIDXYPOS] = 8,      // FW_NAV_D * 100
-            .P8[PIDLEVEL] = 20,     // Self-level strength
-            .I8[PIDLEVEL] = 15,     // Self-leveing low-pass frequency (0 - disabled)
-            .D8[PIDLEVEL] = 75,     // 75% horizon strength
-            .P8[PIDHEADING] = 60,
+            .P8[PID_ROLL] = 25,
+            .I8[PID_ROLL] = 35,
+            .D8[PID_ROLL] = 10,
+            .P8[PID_PITCH] = 20,
+            .I8[PID_PITCH] = 35,
+            .D8[PID_PITCH] = 10,
+            .P8[PID_YAW] = 50,
+            .I8[PID_YAW] = 45,
+            .D8[PID_YAW] = 0,           // not used
+            .P8[PID_POS_Z] = 50,      // NAV_POS_Z_P * 100
+            .I8[PID_POS_Z] = 0,
+            .D8[PID_POS_Z] = 0,
+            .P8[PID_POS_XY] = 75,     // FW_NAV_P * 100
+            .I8[PID_POS_XY] = 5,      // FW_NAV_I * 100
+            .D8[PID_POS_XY] = 8,      // FW_NAV_D * 100
+            .P8[PID_LEVEL] = 20,     // Self-level strength
+            .I8[PID_LEVEL] = 15,     // Self-leveing low-pass frequency (0 - disabled)
+            .D8[PID_LEVEL] = 75,     // 75% horizon strength
+            .P8[PID_HEADING] = 60,
         },
 
         .acc_soft_lpf_hz = 15,
@@ -373,7 +373,7 @@ static void pidApplyHeadingLock(pidState_t *pidState)
     } else {
         pidState->axisLockAccum += (pidState->rateTarget - pidState->gyroRate) * dT;
         pidState->axisLockAccum = constrainf(pidState->axisLockAccum, -45, 45);
-        pidState->rateTarget = pidState->axisLockAccum * (pidBank()->P8[PIDHEADING] / FP_PID_YAWHOLD_P_MULTIPLIER);
+        pidState->rateTarget = pidState->axisLockAccum * (pidBank()->P8[PID_HEADING] / FP_PID_YAWHOLD_P_MULTIPLIER);
     }
 }
 #endif
@@ -384,7 +384,7 @@ static float calcHorizonRateMagnitude(void)
     const int32_t stickPosAil = ABS(getRcStickDeflection(FD_ROLL, rxConfig()->midrc));
     const int32_t stickPosEle = ABS(getRcStickDeflection(FD_PITCH, rxConfig()->midrc));
     const float mostDeflectedStickPos = constrain(MAX(stickPosAil, stickPosEle), 0, 500) / 500.0f;
-    const float modeTransitionStickPos = constrain(pidBank()->D8[PIDLEVEL], 0, 100) / 100.0f;
+    const float modeTransitionStickPos = constrain(pidBank()->D8[PID_LEVEL], 0, 100) / 100.0f;
 
     float horizonRateMagnitude;
 
@@ -405,7 +405,7 @@ static void pidLevel(pidState_t *pidState, flight_dynamics_index_t axis, float h
     const float angleTarget = pidRcCommandToAngle(rcCommand[axis], pidProfile()->max_angle_inclination[axis]);
     const float angleError = angleTarget - attitude.raw[axis];
 
-    float angleRateTarget = constrainf(angleError * (pidBank()->P8[PIDLEVEL] / FP_PID_LEVEL_P_MULTIPLIER), -currentControlRateProfile->rates[axis] * 10.0f, currentControlRateProfile->rates[axis] * 10.0f);
+    float angleRateTarget = constrainf(angleError * (pidBank()->P8[PID_LEVEL] / FP_PID_LEVEL_P_MULTIPLIER), -currentControlRateProfile->rates[axis] * 10.0f, currentControlRateProfile->rates[axis] * 10.0f);
 
     // Apply simple LPF to angleRateTarget to make response less jerky
     // Ideas behind this:
@@ -418,9 +418,9 @@ static void pidLevel(pidState_t *pidState, flight_dynamics_index_t axis, float h
     //     compensate for each slightest change
     //  5) (2) and (4) lead to a simple idea of adding a low-pass filter on rateTarget for ANGLE mode damping
     //     response to rapid attitude changes and smoothing out self-leveling reaction
-    if (pidBank()->I8[PIDLEVEL]) {
+    if (pidBank()->I8[PID_LEVEL]) {
         // I8[PIDLEVEL] is filter cutoff frequency (Hz). Practical values of filtering frequency is 5-10 Hz
-        angleRateTarget = pt1FilterApply4(&pidState->angleFilterState, angleRateTarget, pidBank()->I8[PIDLEVEL], dT);
+        angleRateTarget = pt1FilterApply4(&pidState->angleFilterState, angleRateTarget, pidBank()->I8[PID_LEVEL], dT);
     }
 
     // P[LEVEL] defines self-leveling strength (both for ANGLE and HORIZON modes)
@@ -640,7 +640,7 @@ float pidMagHold(void)
         New controller for 2deg error requires 2,6dps. 4dps for 3deg and so on up until mag_hold_rate_limit is reached.
     */
 
-    magHoldRate = error * pidBank()->P8[PIDHEADING] / 30;
+    magHoldRate = error * pidBank()->P8[PID_HEADING] / 30;
     magHoldRate = constrainf(magHoldRate, -compassConfig()->mag_hold_rate_limit, compassConfig()->mag_hold_rate_limit);
     magHoldRate = pt1FilterApply4(&magHoldRateFilter, magHoldRate, MAG_HOLD_ERROR_LPF_FREQ, dT);
 

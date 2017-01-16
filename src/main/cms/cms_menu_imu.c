@@ -130,9 +130,9 @@ static uint8_t cmsx_pidYaw[3];
 
 static long cmsx_PidRead(void)
 {
-    cmsx_ReadPidToArray(cmsx_pidRoll, PIDROLL);
-    cmsx_ReadPidToArray(cmsx_pidPitch, PIDPITCH);
-    cmsx_ReadPidToArray(cmsx_pidYaw, PIDYAW);
+    cmsx_ReadPidToArray(cmsx_pidRoll, PID_ROLL);
+    cmsx_ReadPidToArray(cmsx_pidPitch, PID_PITCH);
+    cmsx_ReadPidToArray(cmsx_pidYaw, PID_YAW);
 
     return 0;
 }
@@ -149,9 +149,9 @@ static long cmsx_PidWriteback(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    cmsx_WritebackPidFromArray(cmsx_pidRoll, PIDROLL);
-    cmsx_WritebackPidFromArray(cmsx_pidPitch, PIDPITCH);
-    cmsx_WritebackPidFromArray(cmsx_pidYaw, PIDYAW);
+    cmsx_WritebackPidFromArray(cmsx_pidRoll, PID_ROLL);
+    cmsx_WritebackPidFromArray(cmsx_pidPitch, PID_PITCH);
+    cmsx_WritebackPidFromArray(cmsx_pidYaw, PID_YAW);
 
     schedulePidGainsUpdate();
 
@@ -187,15 +187,15 @@ static CMS_Menu cmsx_menuPid = {
     .entries = cmsx_menuPidEntries
 };
 
-static uint8_t cmsx_pidZPos[3];
-static uint8_t cmsx_pidZVel[3];
+static uint8_t cmsx_pidPosZ[3];
+static uint8_t cmsx_pidVelZ[3];
 static uint8_t cmsx_pidHead[3];
 
 static long cmsx_menuPidAltMag_onEnter(void)
 {
-    cmsx_ReadPidToArray(cmsx_pidZPos, PIDZPOS);
-    cmsx_ReadPidToArray(cmsx_pidZVel, PIDZRATE);
-    cmsx_pidHead[0] = pidBank()->P8[PIDHEADING];
+    cmsx_ReadPidToArray(cmsx_pidPosZ, PID_POS_Z);
+    cmsx_ReadPidToArray(cmsx_pidVelZ, PID_VEL_Z);
+    cmsx_pidHead[0] = pidBank()->P8[PID_HEADING];
 
     return 0;
 }
@@ -204,9 +204,9 @@ static long cmsx_menuPidAltMag_onExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    cmsx_WritebackPidFromArray(cmsx_pidZPos, PIDZPOS);
-    cmsx_WritebackPidFromArray(cmsx_pidZVel, PIDZRATE);
-    pidBankMutable()->P8[PIDHEADING] = cmsx_pidHead[0];
+    cmsx_WritebackPidFromArray(cmsx_pidPosZ, PID_POS_Z);
+    cmsx_WritebackPidFromArray(cmsx_pidVelZ, PID_VEL_Z);
+    pidBankMutable()->P8[PID_HEADING] = cmsx_pidHead[0];
 
     navigationUsePIDs();
 
@@ -216,12 +216,12 @@ static long cmsx_menuPidAltMag_onExit(const OSD_Entry *self)
 static OSD_Entry cmsx_menuPidAltMagEntries[] = {
     { "-- ALT&MAG --", OME_Label, NULL, profileIndexString, 0},
 
-    { "ALT P", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidZPos[0], 0, 255, 1 }, 0 },
-    { "ALT I", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidZPos[1], 0, 255, 1 }, 0 },
-    { "ALT D", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidZPos[2], 0, 255, 1 }, 0 },
-    { "VEL P", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidZVel[0], 0, 255, 1 }, 0 },
-    { "VEL I", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidZVel[1], 0, 255, 1 }, 0 },
-    { "VEL D", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidZVel[2], 0, 255, 1 }, 0 },
+    { "ALT P", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidPosZ[0], 0, 255, 1 }, 0 },
+    { "ALT I", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidPosZ[1], 0, 255, 1 }, 0 },
+    { "ALT D", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidPosZ[2], 0, 255, 1 }, 0 },
+    { "VEL P", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidVelZ[0], 0, 255, 1 }, 0 },
+    { "VEL I", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidVelZ[1], 0, 255, 1 }, 0 },
+    { "VEL D", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidVelZ[2], 0, 255, 1 }, 0 },
     { "MAG P", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidHead[0], 0, 255, 1 }, 0 },
 
     {"BACK", OME_Back, NULL, NULL, 0},
@@ -237,13 +237,13 @@ static CMS_Menu cmsx_menuPidAltMag = {
     .entries = cmsx_menuPidAltMagEntries,
 };
 
-static uint8_t cmsx_pidXYPos[3];
-static uint8_t cmsx_pidXYVel[3];
+static uint8_t cmsx_pidPosXY[3];
+static uint8_t cmsx_pidVelXY[3];
 
 static long cmsx_menuPidGpsnav_onEnter(void)
 {
-    cmsx_ReadPidToArray(cmsx_pidXYPos, PIDXYPOS);
-    cmsx_ReadPidToArray(cmsx_pidXYVel, PIDXYRATE);
+    cmsx_ReadPidToArray(cmsx_pidPosXY, PID_POS_XY);
+    cmsx_ReadPidToArray(cmsx_pidVelXY, PID_VEL_XY);
 
     return 0;
 }
@@ -252,8 +252,8 @@ static long cmsx_menuPidGpsnav_onExit(const OSD_Entry *self)
 {
     UNUSED(self);
 
-    cmsx_WritebackPidFromArray(cmsx_pidXYPos, PIDXYPOS);
-    cmsx_WritebackPidFromArray(cmsx_pidXYVel, PIDXYRATE);
+    cmsx_WritebackPidFromArray(cmsx_pidPosXY, PID_POS_XY);
+    cmsx_WritebackPidFromArray(cmsx_pidVelXY, PID_VEL_XY);
 
     navigationUsePIDs();
 
@@ -263,11 +263,11 @@ static long cmsx_menuPidGpsnav_onExit(const OSD_Entry *self)
 static OSD_Entry cmsx_menuPidGpsnavEntries[] = {
     { "-- GPSNAV --", OME_Label, NULL, profileIndexString, 0},
 
-    { "POS  P", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidXYPos[0],  0, 255, 1 }, 0 },
-    { "POS  I", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidXYPos[1],  0, 255, 1 }, 0 },
-    { "POSR P", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidXYVel[0], 0, 255, 1 }, 0 },
-    { "POSR I", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidXYVel[1], 0, 255, 1 }, 0 },
-    { "POSR D", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidXYVel[2], 0, 255, 1 }, 0 },
+    { "POS  P", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidPosXY[0],  0, 255, 1 }, 0 },
+    { "POS  I", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidPosXY[1],  0, 255, 1 }, 0 },
+    { "POSR P", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidVelXY[0], 0, 255, 1 }, 0 },
+    { "POSR I", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidVelXY[1], 0, 255, 1 }, 0 },
+    { "POSR D", OME_UINT8, NULL, &(OSD_UINT8_t){ &cmsx_pidVelXY[2], 0, 255, 1 }, 0 },
 
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}
